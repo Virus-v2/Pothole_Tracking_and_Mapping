@@ -220,8 +220,6 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
                 Location location = new Location("dummyprovider");
                 LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
                 marker.setPosition(myCoordinates);
-                double longitude = location.getLongitude();
-                double latitude = location.getLatitude();
 
             }
 
