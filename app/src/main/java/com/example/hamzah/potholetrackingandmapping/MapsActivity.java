@@ -31,10 +31,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 public class MapsActivity extends FragmentActivity implements AccActivity, SensorEventListener {
     final static int PERMISSION_ALL = 1;
+    private static final String TAG = "MainActivity";
     final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION};
     public GoogleMap mMap;
@@ -214,6 +220,9 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
                 Location location = new Location("dummyprovider");
                 LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
                 marker.setPosition(myCoordinates);
+                double longitude = location.getLongitude();
+                double latitude = location.getLatitude();
+
             }
 
         }
