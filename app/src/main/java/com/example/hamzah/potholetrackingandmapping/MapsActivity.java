@@ -9,6 +9,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -16,6 +17,12 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -25,7 +32,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+
+public class MapsActivity extends FragmentActivity implements AccActivity, SensorEventListener {
     final static int PERMISSION_ALL = 1;
     final static String[] PERMISSIONS = {android.Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION};
@@ -33,6 +41,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public MarkerOptions mo;
     public Marker marker;
     public LocationManager locationManager;
+
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+    private Sensor mAcc;
+    private float mLastX, mLastY, mLastZ;
+    private boolean mInitialized;
+    private MediaPlayer player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +57,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        // Get the default sensor of specified type
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensorManager.registerListener(this,mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        player = MediaPlayer.create(this, R.raw.beep);
         mapFragment.getMapAsync(this);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         mo = new MarkerOptions().position(new LatLng(0, 0)).title("My Current Location");
@@ -52,23 +72,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             showAlert(1);
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         marker = mMap.addMarker(mo);
-        /**
-         * LatLng sydney =  new LatLng(-34,151);
-         * mMap.addMarker(newMarkerOptions().positions)
-         */
     }
 
 
@@ -166,5 +173,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
         dialog.show();
     }
+
+
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(this,mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+    protected void onPause() {
+        super.onPause();
+        mSensorManager.unregisterListener(this);
+    }
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        float x = event.values[0];
+        float y = event.values[1];
+        float z = event.values[2];
+        if (!mInitialized) {
+            mLastX = x;
+            mLastY = y;
+            mLastZ = z;
+            mInitialized = true;
+        } else {
+
+            float deltaY = y - mLastY;
+            float deltaZ = z - mLastZ;
+
+            mLastX = x;
+            mLastY = y;
+            mLastZ = z;
+
+            if (deltaY < -3) {
+
+                player.start();
+                Location location = new Location("dummyprovider");
+                LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
+                marker.setPosition(myCoordinates);
+            }
+
+        }
+    }
+
 }
 
