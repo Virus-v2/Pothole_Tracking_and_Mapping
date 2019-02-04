@@ -31,11 +31,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.IgnoreExtraProperties;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MapsActivity extends FragmentActivity implements AccActivity, SensorEventListener {
@@ -54,6 +59,7 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
     private float mLastX, mLastY, mLastZ;
     private boolean mInitialized;
     private MediaPlayer player;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,10 +116,10 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
 
     private void requestLocation() {
         Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
         criteria.setPowerRequirement(Criteria.POWER_HIGH);
         String provider = locationManager.getBestProvider(criteria, true);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -123,7 +129,7 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(provider, 1000, 10, this);
+        locationManager.requestLocationUpdates(provider, 100, 10, this);
     }
 
     private boolean isLocationEnabled() {
@@ -220,10 +226,24 @@ public class MapsActivity extends FragmentActivity implements AccActivity, Senso
                 Location location = new Location("dummyprovider");
                 LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
                 marker.setPosition(myCoordinates);
-
+                saveToFirebase();
             }
 
         }
+    }
+    private void saveToFirebase() {
+        Location location = new Location("dummyprovider");
+        LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
+        Location mCurrentLocation = location;
+        Map mLocations = new HashMap();
+        Map  mCoordinate = new HashMap();
+        mCoordinate.put("Latitude", mCurrentLocation.getLatitude());
+        mCoordinate.put("Longitude", mCurrentLocation.getLongitude());
+        mLocations.put("location", mCoordinate);
+        String url = "https://https://pothole-tracking-and-mapping.firebaseio.com/";
+        DatabaseReference myFirebaseRef = FirebaseDatabase.getInstance().getReferenceFromUrl(url);
+        myFirebaseRef.push().setValue(mLocations);
+
     }
 
 }
